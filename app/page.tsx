@@ -1,113 +1,195 @@
-import Image from 'next/image'
+"use client";
+
+import { useEffect, useState } from "react";
+
+// Docs
+// http://web.archive.org/web/20121115090806/http://www.tuaw.com/2012/03/01/retina-display-macs-ipads-and-hidpi-doing-the-math/
+// https://stackoverflow.com/questions/12593936/what-is-the-formula-to-determine-if-a-screen-is-retina-resolution
+
+function getNumber(input: string) {
+  const number = Number(input);
+
+  if (isNaN(number)) {
+    return 0;
+  }
+  return number;
+}
+
+function calculateWidthAndHeight(
+  diagonal: number,
+  widthRatio: number,
+  heightRatio: number
+) {
+  // Calculate width and height using the ratios
+  const width = diagonal / Math.sqrt(1 + (heightRatio / widthRatio) ** 2);
+  const height = width * (heightRatio / widthRatio);
+  return [width, height];
+}
+
+function calculateRetinaDistance(
+  pixelWidthAmount: number,
+  screenWidthInInces: number
+) {
+  const ppi = pixelWidthAmount / screenWidthInInces;
+  console.log({ ppi });
+
+  const minimumDistance = 3450 / ppi;
+
+  return minimumDistance;
+}
 
 export default function Home() {
+  // const [isRetina, setIsRetina] = useState(false);
+  const [result, setResult] = useState<
+    | { status: "idle"; retinaDistance: null }
+    | { status: "success"; retinaDistance: number }
+    | { status: "error"; retinaDistance: number }
+  >({ status: "idle", retinaDistance: null });
+
+  // Input handlers.
+  const [screenDiagonal, setScreenDiagonal] = useState("");
+  const [aspectRatio, setAspectRatio] = useState("");
+  const [screenResolutionWidth, setScreenResolutionWidth] = useState("");
+  const [screenResolutionHeight, setScreenResolutionHeight] = useState("");
+  const [distance, setDistance] = useState("");
+
+  useEffect(() => {
+    const [widthRatio, heightRatio] = aspectRatio.split(":");
+
+    const [width] = calculateWidthAndHeight(
+      getNumber(screenDiagonal),
+      getNumber(widthRatio),
+      getNumber(heightRatio)
+    );
+
+    const retinaDistance = calculateRetinaDistance(
+      getNumber(screenResolutionWidth),
+      width
+    );
+    console.log({ retinaDistance });
+
+    const isRetina = getNumber(distance) >= retinaDistance;
+    console.log({ isRetina });
+
+    if (!isFinite(retinaDistance)) {
+      setResult({ status: "idle", retinaDistance: null });
+      return;
+    }
+    if (isRetina) {
+      setResult({ status: "success", retinaDistance });
+      return;
+    }
+    setResult({ status: "error", retinaDistance });
+    return;
+  }, [
+    aspectRatio,
+    screenDiagonal,
+    screenResolutionHeight,
+    screenResolutionWidth,
+    distance,
+  ]);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="grid gap-2 p-2">
+      <h1 className="text-2xl mb-4">Is your display Retina?</h1>
+      <p className="text-md text-gray-200">
+        Retina display is a condition where a screen is super sharp that your
+        eyes cannot see individual pixels.
+      </p>
+      <p className="text-sm text-gray-400">
+        We usually want to achieve this metric so that our monitor or laptops
+        are looking sharp.
+      </p>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-2">
+        {/* 1. Ukuran layar */}
+        <div className=" w-full rounded-md p-2 border-gray-600 border-solid border-2">
+          <h4>Ukuran Layar</h4>
+          <input
+            className="bg-gray-600 p-1 rounded-md"
+            placeholder="ukuran layar diagonal"
+            value={screenDiagonal}
+            onChange={(e) => setScreenDiagonal(e.target.value)}
+          />
+          <span>&nbsp;inch</span>
+        </div>
+
+        {/* 2. Aspect ratio */}
+        <div className=" w-full rounded-md p-2 border-gray-600 border-solid border-2">
+          <h4>Aspect Ratio</h4>
+          <select
+            name="cars"
+            id="cars"
+            className="bg-gray-600 p-1 rounded-md"
+            value={aspectRatio}
+            onChange={(e) => setAspectRatio(e.target.value)}
           >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+            <option value="">-Select-</option>
+            <option value="16:9">16 : 9</option>
+            <option value="4:3">4 : 3</option>
+            <option value="21:9">21 : 9</option>
+            <option value="32:9">32 : 9</option>
+          </select>
+        </div>
+
+        {/* 3. Resolusi layar */}
+        <div className="gap-1 w-full rounded-md p-2 border-gray-600 border-solid border-2">
+          <h4>Resolusi Layar</h4>
+          <div className="mb-1">
+            <input
+              className="bg-gray-600 p-1 rounded-md"
+              placeholder="Resolusi lebar"
+              value={screenResolutionWidth}
+              onChange={(e) => setScreenResolutionWidth(e.target.value)}
             />
-          </a>
+            <span>&nbsp;pixel</span>
+          </div>
+          <div>
+            <input
+              className="bg-gray-600 p-1 rounded-md"
+              placeholder="Resolusi tinggi"
+              value={screenResolutionHeight}
+              onChange={(e) => setScreenResolutionHeight(e.target.value)}
+            />
+            <span>&nbsp;pixel</span>
+          </div>
+        </div>
+
+        {/* 4. Jarak penggunaan */}
+        <div className=" w-full rounded-md p-2 border-gray-600 border-solid border-2">
+          <h4>Jarak penggunaan</h4>
+          <input
+            value={distance}
+            onChange={(e) => setDistance(e.target.value)}
+            className="bg-gray-600 p-1 rounded-md"
+            placeholder="Jarak penggunaan"
+          />
+          <span>&nbsp;inch</span>
         </div>
       </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+      <div
+        className={`gap-1 border-solid border-2 p-2 rounded-md ${
+          result.status === "success"
+            ? "border-green-700"
+            : result.status === "error"
+            ? "border-red-800"
+            : "border-gray-500"
+        }`}
+      >
+        <h4 className="text-xl">Result</h4>
+        <p>
+          Is Retina:{" "}
+          {result.status === "success"
+            ? "YES"
+            : result.status === "error"
+            ? "no"
+            : "N/A"}
+        </p>
+        <p className="text-sm text-gray-300">
+          Device kamu akan tampak retina dari jarak terdekat{" "}
+          {result.retinaDistance?.toFixed(2) || 0} inch
+        </p>
       </div>
     </main>
-  )
+  );
 }
