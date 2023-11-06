@@ -116,9 +116,12 @@ export default function Home() {
         {/* 1. Ukuran layar */}
         <div className=" w-full rounded-md p-2 border-gray-600 border-solid border-2">
           <h4>Ukuran Layar</h4>
+          <p className="italic text-gray-500 mb-2">
+            Ukuran diagonal layar (angka)
+          </p>
           <input
             className="bg-gray-600 p-1 rounded-md placeholder:italic w-28"
-            placeholder="diagonal layar"
+            placeholder="0"
             value={screenDiagonal}
             onChange={(e) => setScreenDiagonal(e.target.value)}
           />
@@ -128,12 +131,15 @@ export default function Home() {
         {/* 2. Aspect ratio */}
         <div className=" w-full rounded-md p-2 border-gray-600 border-solid border-2">
           <h4>Aspect Ratio</h4>
+          <p className="italic text-gray-500 mb-2">
+            Perbandingan lebar:tinggi layar
+          </p>
           <select
             className="bg-gray-600 p-1 rounded-md"
             value={aspectRatio}
             onChange={(e) => setAspectRatio(e.target.value)}
           >
-            <option value="">-Select-</option>
+            <option value="">-Pilih-</option>
             <option value="4:3">4 : 3</option>
             <option value="16:9">16 : 9</option>
             <option value="21:9">21 : 9</option>
@@ -144,6 +150,9 @@ export default function Home() {
         {/* 3. Resolusi layar */}
         <div className="gap-1 w-full rounded-md p-2 border-gray-600 border-solid border-2">
           <h4>Resolusi Layar</h4>
+          <p className="italic text-gray-500 mb-2">
+            Banyaknya pixel (lebar x tinggi) pada layar
+          </p>
           <div className="mb-1">
             <div className="mb-2">
               <select
@@ -151,7 +160,7 @@ export default function Home() {
                 value={screenResolution}
                 onChange={(e) => setScreenResolution(e.target.value)}
               >
-                <option value="">-Select-</option>
+                <option value="">-Pilih-</option>
                 <option value="1280x720">HD</option>
                 <option value="1920x1080">Full HD</option>
                 <option value="2560x1440">2K, QHD</option>
@@ -188,39 +197,48 @@ export default function Home() {
 
         {/* 4. Jarak penggunaan */}
         <div className=" w-full rounded-md p-2 border-gray-600 border-solid border-2">
-          <h4>Jarak penggunaan</h4>
+          <h4>Jarak Penggunaan</h4>
+          <p className="italic text-gray-500 mb-1">
+            Jarak antara mata ke layar (angka)
+          </p>
+          <p className="text-xs text-gray-500 mb-2">
+            Avg. eyes to monitor: 21inch
+            <br />
+            Avg. eyes to smartphone: 15inch
+          </p>
           <input
             value={distance}
             onChange={(e) => setDistance(e.target.value)}
             className="bg-gray-600 p-1 rounded-md placeholder:italic w-28"
-            placeholder="Jarak mata ke layar"
+            placeholder="0"
           />
           <span>&nbsp;inch</span>
         </div>
-      </div>
 
-      <div
-        className={`gap-1 border-solid border-2 p-2 rounded-md ${
-          result.status === "success"
-            ? "border-green-700"
-            : result.status === "error"
-            ? "border-red-800"
-            : "border-gray-500"
-        }`}
-      >
-        <h4 className="text-xl">Result</h4>
-        <p>
-          Is Retina:{" "}
-          {result.status === "success"
-            ? "YES"
-            : result.status === "error"
-            ? "no"
-            : "N/A"}
-        </p>
-        <p className="text-sm text-gray-300">
-          Device kamu akan tampak retina dari jarak terdekat{" "}
-          {result.retinaDistance?.toFixed(2) || 0} inch
-        </p>
+        {/* RESULT */}
+        <div
+          className={`border-solid border-2 p-2 rounded-md col-span-1 md:col-span-2 lg:col-span-4 ${
+            result.status === "success"
+              ? "border-green-700"
+              : result.status === "error"
+              ? "border-red-800"
+              : "border-gray-500"
+          }`}
+        >
+          <h4 className="text-xl">Result</h4>
+          <p>
+            Is Retina:{" "}
+            {result.status === "success"
+              ? "YES"
+              : result.status === "error"
+              ? "NO"
+              : "N/A"}
+          </p>
+          <p className="text-sm text-gray-300">
+            Device kamu akan tampak retina dari jarak{" "}
+            {result.retinaDistance?.toFixed(2) || 0} inch
+          </p>
+        </div>
       </div>
 
       {/* Footer */}
