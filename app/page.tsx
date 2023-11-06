@@ -7,45 +7,13 @@ import { useEffect, useState } from "react";
 // https://stackoverflow.com/questions/12593936/what-is-the-formula-to-determine-if-a-screen-is-retina-resolution
 // https://tools.rodrigopolo.com/display_calc/
 
-function getNumber(input: string) {
-  const number = Number(input);
-
-  if (isNaN(number)) {
-    return 0;
-  }
-  return number;
-}
-
-function calculateWidthAndHeight(
-  diagonal: number,
-  widthRatio: number,
-  heightRatio: number
-) {
-  // Calculate width and height using the ratios
-  const width = diagonal / Math.sqrt(1 + (heightRatio / widthRatio) ** 2);
-  const height = width * (heightRatio / widthRatio);
-  return [width, height];
-}
-
-function calculateRetinaDistance(
-  pixelWidthAmount: number,
-  screenWidthInInces: number
-) {
-  const ppi = pixelWidthAmount / screenWidthInInces;
-  console.log({ ppi });
-
-  const minimumDistance = 3450 / ppi;
-
-  return minimumDistance;
-}
-
 export default function Home() {
   // const [isRetina, setIsRetina] = useState(false);
   const [result, setResult] = useState<
-    | { status: "idle"; retinaDistance: null }
-    | { status: "success"; retinaDistance: number }
-    | { status: "error"; retinaDistance: number }
-  >({ status: "idle", retinaDistance: null });
+    | { status: "idle"; retinaDistance: 0; ppi: 0 }
+    | { status: "success"; retinaDistance: number; ppi: number }
+    | { status: "error"; retinaDistance: number; ppi: number }
+  >({ status: "idle", retinaDistance: 0, ppi: 0 });
 
   // Input handlers.
   const [screenDiagonal, setScreenDiagonal] = useState("");
@@ -58,7 +26,7 @@ export default function Home() {
   useEffect(() => {
     const [widthRatio, heightRatio] = aspectRatio.split(":");
 
-    const [width] = calculateWidthAndHeight(
+    const [width] = calculateScreenWidthAndHeight(
       getNumber(screenDiagonal),
       getNumber(widthRatio),
       getNumber(heightRatio)
@@ -66,7 +34,7 @@ export default function Home() {
 
     // Validate inputs.
     if (width === 0 || getNumber(distance) === 0) {
-      setResult({ status: "idle", retinaDistance: null });
+      setResult({ status: "idle", retinaDistance: 0, ppi: 0 });
       return;
     }
 
@@ -75,19 +43,22 @@ export default function Home() {
         ? getNumber(screenResolutionWidth)
         : getNumber(screenResolution.split("x")[0]);
 
-    const retinaDistance = calculateRetinaDistance(pixelWidthAmount, width);
+    const [retinaDistance, ppi] = calculateRetinaDistance(
+      pixelWidthAmount,
+      width
+    );
 
     const isRetina = getNumber(distance) >= retinaDistance;
 
     if (!isFinite(retinaDistance)) {
-      setResult({ status: "idle", retinaDistance: null });
+      setResult({ status: "idle", retinaDistance: 0, ppi: 0 });
       return;
     }
     if (isRetina) {
-      setResult({ status: "success", retinaDistance });
+      setResult({ status: "success", retinaDistance, ppi });
       return;
     }
-    setResult({ status: "error", retinaDistance });
+    setResult({ status: "error", retinaDistance, ppi });
     return;
   }, [
     aspectRatio,
@@ -96,6 +67,9 @@ export default function Home() {
     distance,
     screenResolution,
   ]);
+
+  const retinaDistanceInInch = result.retinaDistance.toFixed(2);
+  const retinaDistanceInCm = (result.retinaDistance * 2.54).toFixed(2);
 
   return (
     <main className="md:w-11/12 lg:w-10/12 xl:w-4/6 mx-auto p-4 md:p-0">
@@ -202,9 +176,9 @@ export default function Home() {
             Jarak antara mata ke layar (angka)
           </p>
           <p className="text-xs text-gray-500 mb-2">
-            Avg. eyes to monitor: 21inch
+            Avg. eyes to monitor: 21 inch
             <br />
-            Avg. eyes to smartphone: 15inch
+            Avg. eyes to smartphone: 15 inch
           </p>
           <input
             value={distance}
@@ -225,19 +199,47 @@ export default function Home() {
               : "border-gray-500"
           }`}
         >
-          <h4 className="text-xl">Result</h4>
-          <p>
+          <h4 className="text-md">Result</h4>
+          <p className="text-xl mb-1">
             Is Retina:{" "}
-            {result.status === "success"
-              ? "YES"
-              : result.status === "error"
-              ? "NO"
-              : "N/A"}
+            {result.status === "success" ? (
+              <span className="bg-green-800 text-white p-1 rounded-md">
+                YES
+              </span>
+            ) : result.status === "error" ? (
+              <span className="bg-red-800 text-white p-1 rounded-md">NO</span>
+            ) : (
+              <span className="italic text-gray-500">(Not Available)</span>
+            )}
           </p>
-          <p className="text-sm text-gray-300">
-            Device kamu akan tampak retina dari jarak{" "}
-            {result.retinaDistance?.toFixed(2) || 0} inch
-          </p>
+          {result.status !== "idle" && (
+            <>
+              <p className="text-md text-gray-300">
+                Retina distance: {retinaDistanceInInch} inch (
+                {retinaDistanceInCm} cm)
+              </p>
+              <p className="text-md text-gray-300 mb-1">
+                PPI: {result.ppi.toFixed(0)}
+              </p>
+              <p className="text-sm text-gray-400">
+                Penjelasan: <br />
+                <span>
+                  &quot;Retina Distance&quot; adalah jarak terdekat dimana layar
+                  kamu akan mulai menjadi retina. Apabila kamu menggunakan
+                  device dengan jarak lebih dekat dari angka di atas, maka
+                  sensasi &apos;Retina Display&apos; tidak akan didapatkan.
+                  Sebaliknya, apabila kamu menggunakan device dengan jarak &gt;={" "}
+                  {retinaDistanceInInch} in, maka layar akan menjadi
+                  &apos;Retina Display&apos;.
+                </span>
+                <br />
+                <span>
+                  &quot;PPI&quot; adalah Pixel per Inch, atau banyaknya jumlah
+                  pixel dalam jarak 1 inchi.
+                </span>
+              </p>
+            </>
+          )}
         </div>
       </div>
 
@@ -253,4 +255,36 @@ export default function Home() {
       </footer>
     </main>
   );
+}
+
+function getNumber(input: string) {
+  const number = Number(input);
+
+  if (isNaN(number)) {
+    return 0;
+  }
+  return number;
+}
+
+function calculateScreenWidthAndHeight(
+  diagonal: number,
+  widthRatio: number,
+  heightRatio: number
+) {
+  // Calculate width and height using the ratios
+  const width = diagonal / Math.sqrt(1 + (heightRatio / widthRatio) ** 2);
+  const height = width * (heightRatio / widthRatio);
+  return [width, height];
+}
+
+function calculateRetinaDistance(
+  pixelWidthAmount: number,
+  screenWidthInInces: number
+) {
+  const ppi = pixelWidthAmount / screenWidthInInces;
+  console.log({ ppi });
+
+  const minimumDistance = 3450 / ppi;
+
+  return [minimumDistance, ppi];
 }
