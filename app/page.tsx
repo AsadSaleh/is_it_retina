@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 // Docs
 // http://web.archive.org/web/20121115090806/http://www.tuaw.com/2012/03/01/retina-display-macs-ipads-and-hidpi-doing-the-math/
 // https://stackoverflow.com/questions/12593936/what-is-the-formula-to-determine-if-a-screen-is-retina-resolution
+// https://tools.rodrigopolo.com/display_calc/
 
 function getNumber(input: string) {
   const number = Number(input);
@@ -49,6 +50,7 @@ export default function Home() {
   // Input handlers.
   const [screenDiagonal, setScreenDiagonal] = useState("");
   const [aspectRatio, setAspectRatio] = useState("");
+  const [screenResolution, setScreenResolution] = useState("");
   const [screenResolutionWidth, setScreenResolutionWidth] = useState("");
   const [screenResolutionHeight, setScreenResolutionHeight] = useState("");
   const [distance, setDistance] = useState("");
@@ -62,14 +64,20 @@ export default function Home() {
       getNumber(heightRatio)
     );
 
-    const retinaDistance = calculateRetinaDistance(
-      getNumber(screenResolutionWidth),
-      width
-    );
-    console.log({ retinaDistance });
+    // Validate inputs.
+    if (width === 0 || getNumber(distance) === 0) {
+      setResult({ status: "idle", retinaDistance: null });
+      return;
+    }
+
+    const pixelWidthAmount =
+      screenResolution === "custom"
+        ? getNumber(screenResolutionWidth)
+        : getNumber(screenResolution.split("x")[0]);
+
+    const retinaDistance = calculateRetinaDistance(pixelWidthAmount, width);
 
     const isRetina = getNumber(distance) >= retinaDistance;
-    console.log({ isRetina });
 
     if (!isFinite(retinaDistance)) {
       setResult({ status: "idle", retinaDistance: null });
@@ -84,29 +92,33 @@ export default function Home() {
   }, [
     aspectRatio,
     screenDiagonal,
-    screenResolutionHeight,
     screenResolutionWidth,
     distance,
+    screenResolution,
   ]);
 
   return (
-    <main className="grid gap-2 p-2">
-      <h1 className="text-2xl mb-4">Is your display Retina?</h1>
-      <p className="text-md text-gray-200">
-        Retina display is a condition where a screen is super sharp that your
-        eyes cannot see individual pixels.
-      </p>
-      <p className="text-sm text-gray-400">
-        We usually want to achieve this metric so that our monitor or laptops
-        are looking sharp.
-      </p>
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-2">
+    <main className="md:w-11/12 lg:w-10/12 xl:w-4/6 mx-auto p-4 md:p-0">
+      {/* Title Section */}
+      <div className="mt-4 lg:mt-10 lg:mb-4 flex flex-col gap-1">
+        <h1 className="text-2xl">Is your display Retina?</h1>
+        <p className="text-md text-gray-200">
+          Retina display is a condition where a screen is super sharp that your
+          eyes cannot see individual pixels.
+        </p>
+        <p className="text-sm text-gray-400 mb-4">
+          We usually want to achieve this metric so that our monitor or laptops
+          are looking sharp.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 md:grid-cols-2 gap-2">
         {/* 1. Ukuran layar */}
         <div className=" w-full rounded-md p-2 border-gray-600 border-solid border-2">
           <h4>Ukuran Layar</h4>
           <input
-            className="bg-gray-600 p-1 rounded-md"
-            placeholder="ukuran layar diagonal"
+            className="bg-gray-600 p-1 rounded-md placeholder:italic w-28"
+            placeholder="diagonal layar"
             value={screenDiagonal}
             onChange={(e) => setScreenDiagonal(e.target.value)}
           />
@@ -117,15 +129,13 @@ export default function Home() {
         <div className=" w-full rounded-md p-2 border-gray-600 border-solid border-2">
           <h4>Aspect Ratio</h4>
           <select
-            name="cars"
-            id="cars"
             className="bg-gray-600 p-1 rounded-md"
             value={aspectRatio}
             onChange={(e) => setAspectRatio(e.target.value)}
           >
             <option value="">-Select-</option>
-            <option value="16:9">16 : 9</option>
             <option value="4:3">4 : 3</option>
+            <option value="16:9">16 : 9</option>
             <option value="21:9">21 : 9</option>
             <option value="32:9">32 : 9</option>
           </select>
@@ -135,22 +145,44 @@ export default function Home() {
         <div className="gap-1 w-full rounded-md p-2 border-gray-600 border-solid border-2">
           <h4>Resolusi Layar</h4>
           <div className="mb-1">
-            <input
-              className="bg-gray-600 p-1 rounded-md"
-              placeholder="Resolusi lebar"
-              value={screenResolutionWidth}
-              onChange={(e) => setScreenResolutionWidth(e.target.value)}
-            />
-            <span>&nbsp;pixel</span>
-          </div>
-          <div>
-            <input
-              className="bg-gray-600 p-1 rounded-md"
-              placeholder="Resolusi tinggi"
-              value={screenResolutionHeight}
-              onChange={(e) => setScreenResolutionHeight(e.target.value)}
-            />
-            <span>&nbsp;pixel</span>
+            <div className="mb-2">
+              <select
+                className="bg-gray-600 p-1 rounded-md"
+                value={screenResolution}
+                onChange={(e) => setScreenResolution(e.target.value)}
+              >
+                <option value="">-Select-</option>
+                <option value="1280x720">HD</option>
+                <option value="1920x1080">Full HD</option>
+                <option value="2560x1440">2K, QHD</option>
+                <option value="3840x2160">4K, UHD</option>
+                <option value="custom">custom</option>
+              </select>
+            </div>
+            {screenResolution === "custom" && (
+              <div>
+                <div className="flex gap-1 items-center justify-start mb-1">
+                  <span>Lebar</span>
+                  <input
+                    className="bg-gray-600 p-1 rounded-md w-24 placeholder:italic"
+                    placeholder="1920"
+                    value={screenResolutionWidth}
+                    onChange={(e) => setScreenResolutionWidth(e.target.value)}
+                  />
+                  <span>px</span>
+                </div>
+                <div className="flex gap-1 items-center justify-start">
+                  <span>Tinggi</span>
+                  <input
+                    className="bg-gray-600 p-1 rounded-md w-24 placeholder:italic"
+                    placeholder="1080"
+                    value={screenResolutionHeight}
+                    onChange={(e) => setScreenResolutionHeight(e.target.value)}
+                  />
+                  <span>px</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -160,8 +192,8 @@ export default function Home() {
           <input
             value={distance}
             onChange={(e) => setDistance(e.target.value)}
-            className="bg-gray-600 p-1 rounded-md"
-            placeholder="Jarak penggunaan"
+            className="bg-gray-600 p-1 rounded-md placeholder:italic w-28"
+            placeholder="Jarak mata ke layar"
           />
           <span>&nbsp;inch</span>
         </div>
@@ -190,6 +222,17 @@ export default function Home() {
           {result.retinaDistance?.toFixed(2) || 0} inch
         </p>
       </div>
+
+      {/* Footer */}
+      <footer className="text-xs fixed right-2 bottom-2 bg-black px-2 py-1 rounded-lg">
+        By{" "}
+        <a
+          href="https://twitter.com/asaduala"
+          className="hover:bg-slate-200 p-1 rounded-md dark:hover:bg-slate-800"
+        >
+          As&apos;ad Ghanim
+        </a>
+      </footer>
     </main>
   );
 }
